@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction Quantity Survey & Cost Estimate</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,Helvetica,sans-serif;
+  background:linear-gradient(135deg,#071d2b,#0c3d4a 48%,#123b31);
+  color:#eef7f7;min-height:100vh;padding:24px
+}
+.container{max-width:1500px;margin:auto}
+.header{
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);
+  border-radius:18px;padding:24px;box-shadow:0 12px 35px rgba(0,0,0,.25);
+  backdrop-filter:blur(12px);margin-bottom:18px
+}
+h1{margin:0 0 7px;text-align:center;font-size:30px;letter-spacing:1px}
+.subtitle{text-align:center;opacity:.8;margin:0}
+.card{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:16px;padding:18px;margin-bottom:18px;backdrop-filter:blur(10px)
+}
+.section-title{font-size:18px;font-weight:bold;margin-bottom:14px;color:#b9f4dc}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+label{font-size:12px;opacity:.8;display:block;margin-bottom:5px}
+input,select{
+  width:100%;padding:10px;border-radius:9px;border:1px solid #78979c;
+  background:rgba(0,0,0,.22);color:white;outline:none
+}
+select option{color:#111}
+input:focus,select:focus{border-color:#66e0b0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button{
+  border:0;border-radius:9px;padding:10px 14px;font-weight:bold;cursor:pointer;
+  background:#0f8f70;color:white;transition:.18s
+}
+button:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.btn-blue{background:#1769aa}.btn-gold{background:#b88419}.btn-red{background:#b63b45}
+.btn-gray{background:#53656a}
+.table-wrap{overflow:auto;border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:1150px;background:rgba(0,0,0,.18)}
+th{background:#0b5e55;color:#fff;padding:10px;font-size:12px;position:sticky;top:0}
+td{border-bottom:1px solid rgba(255,255,255,.12);padding:7px;font-size:12px}
+td input,td select{padding:7px;font-size:12px}
+.amount{text-align:right;font-weight:bold;white-space:nowrap}
+.summary{display:grid;grid-template-columns:1fr 360px;gap:18px}
+.summary-box{background:rgba(0,0,0,.2);border-radius:12px;padding:15px}
+.summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.summary-row.total{font-size:20px;font-weight:bold;color:#b9f4dc;border-top:2px solid #66e0b0;margin-top:8px}
+.note{font-size:11px;opacity:.65;line-height:1.5}
+.footer{text-align:center;font-size:11px;opacity:.6;padding:10px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:1fr}}
+@media(max-width:600px){body{padding:10px}.grid{grid-template-columns:1fr}h1{font-size:22px}}
+@media print{
+ body{background:white;color:#111;padding:0}
+ .header,.card{background:white;border:0;box-shadow:none;color:#111}
+ .toolbar,.no-print{display:none!important}
+ input,select{border:0;background:white;color:#111;padding:2px}
+ table{background:white;color:#111}
+ th{background:#ddd!important;color:#111}
+ td{border-bottom:1px solid #ccc}
+ .summary-box{background:white;border:1px solid #ccc;color:#111}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>QUANTITY SURVEY & COST ESTIMATE</h1>
+    <p class="subtitle">Philippine Construction • BOQ / POW Style • GitHub Pages</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">PROJECT INFORMATION</div>
+    <div class="grid">
+      <div><label>Project Name</label><input id="projectName" placeholder="e.g. Barangay Multi-Purpose Building"></div>
+      <div><label>Location</label><input id="location" placeholder="Municipality / Province"></div>
+      <div><label>Implementing Office</label><input id="office" placeholder="Office / Agency"></div>
+      <div><label>Project Duration</label><input id="duration" placeholder="e.g. 120 Calendar Days"></div>
+      <div><label>Prepared By</label><input id="preparedBy"></div>
+      <div><label>Date Prepared</label><input id="datePrepared" type="date"></div>
+      <div><label>Project Reference No.</label><input id="referenceNo"></div>
+      <div><label>Estimate Version</label><input id="version" value="Version 1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">QUANTITY TAKE-OFF / BILL OF QUANTITIES</div>
+    <div class="toolbar no-print">
+      <button onclick="addRow()">＋ Add Item</button>
+      <button class="btn-blue" onclick="addSection()">＋ Add Section</button>
+      <button class="btn-gold" onclick="saveProject()">💾 Save Project</button>
+      <button class="btn-blue" onclick="loadProject()">↻ Load Saved</button>
+      <button class="btn-gray" onclick="exportCSV()">⇩ Export CSV</button>
+      <button class="btn-gray" onclick="document.getElementById('csvFile').click()">⇧ Import CSV</button>
+      <button class="btn-blue" onclick="window.print()">🖨 Print / PDF</button>
+      <button class="btn-red" onclick="clearAll()">Clear</button>
+      <input id="csvFile" type="file" accept=".csv" style="display:none" onchange="importCSV(event)">
+    </div>
+
+    <div class="table-wrap">
+      <table id="boq">
+        <thead>
+          <tr>
+            <th style="width:55px">Item</th>
+            <th style="width:180px">Work Category</th>
+            <th style="width:260px">Description / Specification</th>
+            <th style="width:90px">Unit</th>
+            <th style="width:100px">Quantity</th>
+            <th style="width:130px">Unit Cost</th>
+            <th style="width:140px">Amount</th>
+            <th style="width:90px">Cost Type</th>
+            <th class="no-print">Action</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note">
+      Tip: Use realistic supplier/labor/equipment rates applicable to the project location.
+      This tool is a calculation aid and does not establish official government unit prices.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">COST SUMMARY</div>
+    <div class="summary">
+      <div class="summary-box">
+        <div class="summary-row"><span>Materials</span><strong id="materials">₱0.00</strong></div>
+        <div class="summary-row"><span>Labor</span><strong id="labor">₱0.00</strong></div>
+        <div class="summary-row"><span>Equipment</span><strong id="equipment">₱0.00</strong></div>
+        <div class="summary-row"><span>Other Direct Cost</span><strong id="other">₱0.00</strong></div>
+        <div class="summary-row"><span>Total Direct Cost</span><strong id="direct">₱0.00</strong></div>
+      </div>
+      <div class="summary-box">
+        <div class="grid" style="grid-template-columns:1fr 1fr">
+          <div><label>OCM %</label><input id="ocmPct" type="number" value="0" min="0" step="0.01" oninput="calculate()"></div>
+          <div><label>Contingency %</label><input id="contPct" type="number" value="0" min="0" step="0.01" oninput="calculate()"></div>
+          <div><label>Profit %</label><input id="profitPct" type="number" value="0" min="0" step="0.01" oninput="calculate()"></div>
+          <div><label>VAT %</label><input id="vatPct" type="number" value="0" min="0" step="0.01" oninput="calculate()"></div>
+        </div>
+        <div class="summary-row"><span>OCM</span><strong id="ocm">₱0.00</strong></div>
+        <div class="summary-row"><span>Contingency</span><strong id="cont">₱0.00</strong></div>
+        <div class="summary-row"><span>Profit</span><strong id="profit">₱0.00</strong></div>
+        <div class="summary-row"><span>VAT</span><strong id="vat">₱0.00</strong></div>
+        <div class="summary-row total"><span>PROJECT TOTAL</span><strong id="grand">₱0.00</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Construction Quantity Survey & Cost Estimate • GitHub Pages • For estimating and planning assistance</div>
+</div>
+
+<script>
+const categories=[
+"General Requirements","Earthworks","Concrete Works","Reinforcing Steel Works",
+"Masonry Works","Structural Works","Roofing Works","Doors & Windows",
+"Finishing Works","Plumbing Works","Electrical Works","Drainage Works",
+"Site Development","Other Works"
+];
+const units=["lot","set","pc","sq.m","sq.ft","cu.m","cu.ft","kg","bag","liter","m","lm","hour","day","MD"];
+let count=0;
+
+function money(n){return "₱"+Number(n||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function addSection(){
+ const tbody=document.getElementById("tbody");
+ const tr=document.createElement("tr");
+ tr.dataset.section="1";
+ tr.innerHTML=`<td colspan="8"><input value="NEW WORK SECTION" style="font-weight:bold;color:#b9f4dc"></td>
+ <td class="no-print"><button class="btn-red" onclick="this.closest('tr').remove();renumber()">Delete</button></td>`;
+ tbody.appendChild(tr);renumber();
+}
+function addRow(data={}){
+ const tbody=document.getElementById("tbody");
+ const tr=document.createElement("tr");
+ tr.innerHTML=`
+ <td class="itemno"></td>
+ <td><select class="cat">${categories.map(x=>`<option ${x===data.cat?"selected":""}>${x}</option>`).join("")}</select></td>
+ <td><input class="desc" value="${esc(data.desc||"")}" placeholder="Work item / specification"></td>
+ <td><select class="unit">${units.map(x=>`<option ${x===data.unit?"selected":""}>${x}</option>`).join("")}</select></td>
+ <td><input class="qty" type="number" min="0" step="0.0001" value="${data.qty??0}" oninput="calculate()"></td>
+ <td><input class="cost" type="number" min="0" step="0.01" value="${data.cost??0}" oninput="calculate()"></td>
+ <td class="amount">₱0.00</td>
+ <td><select class="type"><option ${data.type==="Materials"?"selected":""}>Materials</option><option ${data.type==="Labor"?"selected":""}>Labor</option><option ${data.type==="Equipment"?"selected":""}>Equipment</option><option ${data.type==="Other"?"selected":""}>Other</option></select></td>
+ <td class="no-print"><button class="btn-red" onclick="this.closest('tr').remove();renumber();calculate()">Delete</button></td>`;
+ tbody.appendChild(tr);renumber();calculate();
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function renumber(){
+ let n=0;
+ document.querySelectorAll("#tbody tr").forEach(tr=>{
+   if(tr.dataset.section) tr.querySelector("input").value=tr.querySelector("input").value||"NEW WORK SECTION";
+   else tr.querySelector(".itemno").textContent=++n;
+ });
+}
+function calculate(){
+ let sums={Materials:0,Labor:0,Equipment:0,Other:0};
+ document.querySelectorAll("#tbody tr:not([data-section])").forEach(tr=>{
+   const q=parseFloat(tr.querySelector(".qty").value)||0;
+   const c=parseFloat(tr.querySelector(".cost").value)||0;
+   const a=q*c;
+   tr.querySelector(".amount").textContent=money(a);
+   sums[tr.querySelector(".type").value]+=a;
+ });
+ const direct=Object.values(sums).reduce((a,b)=>a+b,0);
+ const ocm=direct*(parseFloat(document.getElementById("ocmPct").value)||0)/100;
+ const cont=direct*(parseFloat(document.getElementById("contPct").value)||0)/100;
+ const profit=(direct+ocm+cont)*(parseFloat(document.getElementById("profitPct").value)||0)/100;
+ const vatBase=direct+ocm+cont+profit;
+ const vat=vatBase*(parseFloat(document.getElementById("vatPct").value)||0)/100;
+ const grand=vatBase+vat;
+ document.getElementById("materials").textContent=money(sums.Materials);
+ document.getElementById("labor").textContent=money(sums.Labor);
+ document.getElementById("equipment").textContent=money(sums.Equipment);
+ document.getElementById("other").textContent=money(sums.Other);
+ document.getElementById("direct").textContent=money(direct);
+ document.getElementById("ocm").textContent=money(ocm);
+ document.getElementById("cont").textContent=money(cont);
+ document.getElementById("profit").textContent=money(profit);
+ document.getElementById("vat").textContent=money(vat);
+ document.getElementById("grand").textContent=money(grand);
+}
+function projectData(){
+ const fields=["projectName","location","office","duration","preparedBy","datePrepared","referenceNo","version","ocmPct","contPct","profitPct","vatPct"];
+ let d={};fields.forEach(id=>d[id]=document.getElementById(id).value);
+ d.rows=[];
+ document.querySelectorAll("#tbody tr").forEach(tr=>{
+   if(tr.dataset.section)d.rows.push({section:tr.querySelector("input").value});
+   else d.rows.push({
+    cat:tr.querySelector(".cat").value,desc:tr.querySelector(".desc").value,
+    unit:tr.querySelector(".unit").value,qty:tr.querySelector(".qty").value,
+    cost:tr.querySelector(".cost").value,type:tr.querySelector(".type").value
+   });
+ });
+ return d;
+}
+function saveProject(){localStorage.setItem("QS_PROJECT",JSON.stringify(projectData()));alert("Project saved in this browser.");}
+function loadProject(){
+ const raw=localStorage.getItem("QS_PROJECT");
+ if(!raw){alert("No saved project found.");return}
+ const d=JSON.parse(raw);
+ Object.keys(d).forEach(k=>{if(k!=="rows"&&document.getElementById(k))document.getElementById(k).value=d[k]});
+ document.getElementById("tbody").innerHTML="";
+ (d.rows||[]).forEach(r=>{
+   if(r.section!==undefined){addSection();document.querySelector("#tbody tr:last-child input").value=r.section}
+   else addRow(r);
+ });
+ renumber();calculate();
+}
+function clearAll(){
+ if(!confirm("Clear the current estimate?"))return;
+ document.getElementById("tbody").innerHTML="";
+ ["projectName","location","office","duration","preparedBy","referenceNo"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("version").value="Version 1";
+ document.getElementById("datePrepared").value=new Date().toISOString().slice(0,10);
+ ["ocmPct","contPct","profitPct","vatPct"].forEach(id=>document.getElementById(id).value=0);
+ addRow();calculate();
+}
+function csvCell(v){return `"${String(v??"").replace(/"/g,'""')}"`}
+function exportCSV(){
+ const rows=[["Item","Work Category","Description","Unit","Quantity","Unit Cost","Amount","Cost Type"]];
+ document.querySelectorAll("#tbody tr:not([data-section])").forEach(tr=>{
+  rows.push([
+   tr.querySelector(".itemno").textContent,tr.querySelector(".cat").value,tr.querySelector(".desc").value,
+   tr.querySelector(".unit").value,tr.querySelector(".qty").value,tr.querySelector(".cost").value,
+   (parseFloat(tr.querySelector(".qty").value)||0)*(parseFloat(tr.querySelector(".cost").value)||0),
+   tr.querySelector(".type").value
+  ]);
+ });
+ const blob=new Blob(["\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\\n")],{type:"text/csv;charset=utf-8"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="quantity-survey-estimate.csv";a.click();
+}
+function importCSV(e){
+ const file=e.target.files[0];if(!file)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  const lines=reader.result.replace(/^\\ufeff/,"").split(/\\r?\\n/).filter(Boolean);
+  document.getElementById("tbody").innerHTML="";
+  lines.slice(1).forEach(line=>{
+   const vals=parseCSVLine(line);
+   if(vals.length>=8)addRow({cat:vals[1],desc:vals[2],unit:vals[3],qty:vals[4],cost:vals[5],type:vals[7]});
+  });
+  renumber();calculate();e.target.value="";
+ };reader.readAsText(file);
+}
+function parseCSVLine(line){
+ let out=[],cur="",q=false;
+ for(let i=0;i<line.length;i++){
+  const ch=line[i];
+  if(ch==='"'&&line[i+1]==='"'){cur+='"';i++;continue}
+  if(ch==='"'){q=!q;continue}
+  if(ch===','&&!q){out.push(cur);cur="";continue}
+  cur+=ch;
+ }
+ out.push(cur);return out;
+}
+document.getElementById("datePrepared").value=new Date().toISOString().slice(0,10);
+addRow({cat:"General Requirements",desc:"Sample item - replace or delete",unit:"lot",qty:1,cost:0,type:"Other"});
+</script>
+</body>
+</html>
